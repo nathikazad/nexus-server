@@ -3,11 +3,9 @@ from sqlalchemy import (
     ForeignKey, UniqueConstraint, CheckConstraint, JSON,
     create_engine, BigInteger
 )
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
-import uuid
 from config import db_config
 
 # Create the base class for our models
@@ -16,9 +14,9 @@ Base = declarative_base()
 class ModelType(Base):
     __tablename__ = 'model_types'
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(Text, unique=True, nullable=False)
-    parent_id = Column(UUID(as_uuid=True), ForeignKey('model_types.id', ondelete='SET NULL'))
+    parent_id = Column(Integer, ForeignKey('model_types.id', ondelete='SET NULL'))
     type_kind = Column(Text, nullable=False)
     is_action = Column(Boolean, default=False)
     description = Column(Text)
@@ -40,8 +38,8 @@ class ModelType(Base):
 class Model(Base):
     __tablename__ = 'models'
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    model_type_id = Column(UUID(as_uuid=True), ForeignKey('model_types.id', ondelete='CASCADE'), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    model_type_id = Column(Integer, ForeignKey('model_types.id', ondelete='CASCADE'), nullable=False)
     title = Column(Text, nullable=False)
     body = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -61,9 +59,9 @@ class Model(Base):
 class TraitAssignment(Base):
     __tablename__ = 'trait_assignments'
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    model_id = Column(UUID(as_uuid=True), ForeignKey('models.id', ondelete='CASCADE'), nullable=False)
-    trait_type_id = Column(UUID(as_uuid=True), ForeignKey('model_types.id', ondelete='CASCADE'), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    model_id = Column(Integer, ForeignKey('models.id', ondelete='CASCADE'), nullable=False)
+    trait_type_id = Column(Integer, ForeignKey('model_types.id', ondelete='CASCADE'), nullable=False)
     applied_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
@@ -80,8 +78,8 @@ class TraitAssignment(Base):
 class AttributeDefinition(Base):
     __tablename__ = 'attribute_definitions'
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    model_type_id = Column(UUID(as_uuid=True), ForeignKey('model_types.id', ondelete='CASCADE'), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    model_type_id = Column(Integer, ForeignKey('model_types.id', ondelete='CASCADE'), nullable=False)
     key = Column(Text, nullable=False)
     value_type = Column(Text, nullable=False)
     required = Column(Boolean, default=False)
@@ -103,8 +101,8 @@ class Attribute(Base):
     __tablename__ = 'attributes'
     
     id = Column(BigInteger, primary_key=True)
-    model_id = Column(UUID(as_uuid=True), ForeignKey('models.id', ondelete='CASCADE'), nullable=False)
-    attribute_definition_id = Column(UUID(as_uuid=True), ForeignKey('attribute_definitions.id', ondelete='CASCADE'), nullable=False)
+    model_id = Column(Integer, ForeignKey('models.id', ondelete='CASCADE'), nullable=False)
+    attribute_definition_id = Column(Integer, ForeignKey('attribute_definitions.id', ondelete='CASCADE'), nullable=False)
     value_text = Column(Text)
     value_number = Column(Integer)  # Using Integer instead of double precision for simplicity
     value_time = Column(DateTime)
@@ -126,9 +124,9 @@ class Attribute(Base):
 class RelationshipType(Base):
     __tablename__ = 'relationship_type'
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    from_model_type_id = Column(UUID(as_uuid=True), ForeignKey('model_types.id', ondelete='CASCADE'), nullable=False)
-    to_model_type_id = Column(UUID(as_uuid=True), ForeignKey('model_types.id', ondelete='CASCADE'), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    from_model_type_id = Column(Integer, ForeignKey('model_types.id', ondelete='CASCADE'), nullable=False)
+    to_model_type_id = Column(Integer, ForeignKey('model_types.id', ondelete='CASCADE'), nullable=False)
     relation_name = Column(Text, nullable=False)
     multiplicity = Column(Text, default='many')
     description = Column(Text)
@@ -149,8 +147,8 @@ class RelationshipType(Base):
 class RelationAttributeDefinition(Base):
     __tablename__ = 'relation_attribute_definitions'
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    relationship_type_id = Column(UUID(as_uuid=True), ForeignKey('relationship_type.id', ondelete='CASCADE'), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    relationship_type_id = Column(Integer, ForeignKey('relationship_type.id', ondelete='CASCADE'), nullable=False)
     key = Column(Text, nullable=False)
     value_type = Column(Text, nullable=False)
     required = Column(Boolean, default=False)
@@ -171,9 +169,9 @@ class Relation(Base):
     __tablename__ = 'relations'
     
     id = Column(BigInteger, primary_key=True)
-    from_id = Column(UUID(as_uuid=True), ForeignKey('models.id', ondelete='CASCADE'), nullable=False)
-    to_id = Column(UUID(as_uuid=True), ForeignKey('models.id', ondelete='CASCADE'), nullable=False)
-    relationship_type_id = Column(UUID(as_uuid=True), ForeignKey('relationship_type.id', ondelete='SET NULL'))
+    from_id = Column(Integer, ForeignKey('models.id', ondelete='CASCADE'), nullable=False)
+    to_id = Column(Integer, ForeignKey('models.id', ondelete='CASCADE'), nullable=False)
+    relationship_type_id = Column(Integer, ForeignKey('relationship_type.id', ondelete='SET NULL'))
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
@@ -190,7 +188,7 @@ class RelationAttribute(Base):
     
     id = Column(BigInteger, primary_key=True)
     relation_id = Column(BigInteger, ForeignKey('relations.id', ondelete='CASCADE'), nullable=False)
-    relation_attribute_definition_id = Column(UUID(as_uuid=True), ForeignKey('relation_attribute_definitions.id', ondelete='CASCADE'), nullable=False)
+    relation_attribute_definition_id = Column(Integer, ForeignKey('relation_attribute_definitions.id', ondelete='CASCADE'), nullable=False)
     value_text = Column(Text)
     value_number = Column(Integer)
     value_time = Column(DateTime)
@@ -211,7 +209,7 @@ class RelationAttribute(Base):
 class Embedding(Base):
     __tablename__ = 'embeddings'
     
-    model_id = Column(UUID(as_uuid=True), ForeignKey('models.id', ondelete='CASCADE'), primary_key=True)
+    model_id = Column(Integer, ForeignKey('models.id', ondelete='CASCADE'), primary_key=True)
     embedding = Column(Text)  # Will store vector as text representation
     
     # Relationships
