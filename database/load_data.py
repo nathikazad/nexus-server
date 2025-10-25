@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 """
-Demo script showing SQLAlchemy + Alembic migrations with PostgreSQL Graph Document Schema
+Data loading script for SQLAlchemy + Alembic + PostgreSQL Graph Document Schema
 
 This script demonstrates:
-1. Running migrations to create the graph document schema
-2. Creating model types, models, and relationships
-3. EAV (Entity-Attribute-Value) system
-4. Trait assignments and graph traversal
-5. Complex queries across the graph
+1. Creating model types, models, and relationships
+2. EAV (Entity-Attribute-Value) system
+3. Trait assignments and graph traversal
+4. Complex queries across the graph
 
 Prerequisites:
-- PostgreSQL running locally (or configure remote connection)
-- Database 'nexus_db' created
-- Environment variables configured (see env_example.txt)
+- Database initialized with init.py
+- Migrations run successfully
 """
 
 import os
@@ -27,68 +25,6 @@ from models import (
     RelationshipType, Relation, SessionLocal, engine
 )
 from config import db_config
-
-def setup_database():
-    """Create the database if it doesn't exist"""
-    print("🔧 Setting up database...")
-    print(f"Database URL: {db_config.database_url}")
-    
-    # Test connection
-    try:
-        with engine.connect() as conn:
-            print("✅ Database connection successful!")
-    except Exception as e:
-        print(f"❌ Database connection failed: {e}")
-        print("\n📋 Setup instructions:")
-        print("1. Install PostgreSQL locally:")
-        print("   brew install postgresql")
-        print("   brew services start postgresql")
-        print("\n2. Create database:")
-        print("   createdb nexus_db")
-        print("\n3. Copy env_example.txt to .env and update with your credentials")
-        return False
-    
-    return True
-
-def run_migrations():
-    """Run Alembic migrations"""
-    print("\n🔄 Running migrations...")
-    
-    # Import alembic command
-    from alembic.config import Config
-    from alembic import command
-    
-    # Set up alembic config
-    alembic_cfg = Config("alembic.ini")
-    
-    try:
-        # Run migrations
-        command.upgrade(alembic_cfg, "head")
-        print("✅ Migrations completed successfully!")
-        return True
-    except Exception as e:
-        print(f"❌ Migration failed: {e}")
-        return False
-
-def run_migrations():
-    """Run Alembic migrations"""
-    print("\n🔄 Running migrations...")
-    
-    # Import alembic command
-    from alembic.config import Config
-    from alembic import command
-    
-    # Set up alembic config
-    alembic_cfg = Config("alembic.ini")
-    
-    try:
-        # Run migrations
-        command.upgrade(alembic_cfg, "head")
-        print("✅ Migrations completed successfully!")
-        return True
-    except Exception as e:
-        print(f"❌ Migration failed: {e}")
-        return False
 
 def demo_database_operations():
     """Demonstrate database operations with graph document schema"""
@@ -268,48 +204,32 @@ def demo_database_operations():
     finally:
         db.close()
 
-def show_migration_history():
-    """Show migration history"""
-    print("\n📜 Migration history:")
+def load_sample_data():
+    """Load sample data into the database"""
+    print("🚀 Loading Sample Data")
+    print("=" * 40)
     
-    from alembic.config import Config
-    from alembic import command
-    
-    alembic_cfg = Config("alembic.ini")
-    
+    # Test database connection first
     try:
-        command.history(alembic_cfg)
+        with engine.connect() as conn:
+            print("✅ Database connection verified!")
     except Exception as e:
-        print(f"❌ Failed to show history: {e}")
-
-def main():
-    """Main demo function"""
-    print("🚀 SQLAlchemy + Alembic + PostgreSQL Graph Document Demo")
-    print("=" * 60)
-    
-    # Setup database
-    if not setup_database():
-        return
-    
-    # Run migrations
-    if not run_migrations():
-        return
-    
-    # Show migration history
-    show_migration_history()
+        print(f"❌ Database connection failed: {e}")
+        print("Please run init.py first to set up the database.")
+        return False
     
     # Demo database operations
     demo_database_operations()
     
-    print("\n🎉 Demo completed successfully!")
+    print("\n🎉 Sample data loading completed successfully!")
     print("\n📋 What we demonstrated:")
-    print("1. ✅ Database connection and setup")
-    print("2. ✅ Running Alembic migrations")
-    print("3. ✅ Graph document schema operations")
-    print("4. ✅ Creating model types and models")
-    print("5. ✅ EAV (Entity-Attribute-Value) system")
-    print("6. ✅ Trait assignments and relationships")
-    print("7. ✅ Graph traversal and queries")
+    print("1. ✅ Graph document schema operations")
+    print("2. ✅ Creating model types and models")
+    print("3. ✅ EAV (Entity-Attribute-Value) system")
+    print("4. ✅ Trait assignments and relationships")
+    print("5. ✅ Graph traversal and queries")
+    
+    return True
 
 if __name__ == "__main__":
-    main()
+    load_sample_data()
