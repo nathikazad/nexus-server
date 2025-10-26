@@ -1,0 +1,161 @@
+# GraphQL Fragments for reusable model structure
+
+# Basic model fields
+fragment ModelBasic on Model {
+  id
+  title
+  body
+  createdAt
+  updatedAt
+}
+
+# Model type information
+fragment ModelTypeInfo on Model {
+  modelTypeByModelTypeId {
+    id
+    name
+    typeKind
+    description
+  }
+}
+
+# Model traits
+fragment ModelTraits on Model {
+  traitAssignmentsByModelId {
+    nodes {
+      appliedAt
+      modelTypeByTraitTypeId {
+        id
+        name
+        typeKind
+        description
+      }
+    }
+  }
+}
+
+# Model attributes
+fragment ModelAttributes on Model {
+  attributesByModelId {
+    nodes {
+      id
+      valueText
+      valueNumber
+      valueTime
+      valueBool
+      valueVector
+      attributeDefinitionByAttributeDefinitionId {
+        id
+        key
+        valueType
+      }
+    }
+  }
+}
+
+# Model relationships (outgoing)
+fragment ModelOutgoingRelations on Model {
+  relationsByFromId {
+    nodes {
+      id
+      createdAt
+      relationshipTypeByRelationshipTypeId {
+        id
+        relationName
+        multiplicity
+        description
+      }
+      modelByToId {
+        id
+        title
+        modelTypeByModelTypeId {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+
+# Model relationships (incoming)
+fragment ModelIncomingRelations on Model {
+  relationsByToId {
+    nodes {
+      id
+      createdAt
+      relationshipTypeByRelationshipTypeId {
+        id
+        relationName
+        multiplicity
+        description
+      }
+      modelByFromId {
+        id
+        title
+        modelTypeByModelTypeId {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+
+# Complete model with all related data
+fragment ModelComplete on Model {
+  ...ModelBasic
+  ...ModelTypeInfo
+  ...ModelTraits
+  ...ModelAttributes
+  ...ModelOutgoingRelations
+  ...ModelIncomingRelations
+}
+
+# Complete GraphQL query for models with all related data
+query GetAllModelsWithRelations {
+  allModels {
+    nodes {
+      ...ModelComplete
+    }
+  }
+}
+
+# Simplified query for just basic model info
+query GetBasicModels {
+  allModels {
+    nodes {
+      ...ModelBasic
+      ...ModelTypeInfo
+    }
+  }
+}
+
+# Query for a single model by ID with all related data
+query GetModelById($modelId: Int!) {
+  modelById(id: $modelId) {
+    ...ModelComplete
+  }
+}
+
+# Query for models with just basic info and traits
+query GetModelsWithTraits {
+  allModels {
+    nodes {
+      ...ModelBasic
+      ...ModelTypeInfo
+      ...ModelTraits
+    }
+  }
+}
+
+# Query for models with just relationships
+query GetModelsWithRelations {
+  allModels {
+    nodes {
+      ...ModelBasic
+      ...ModelTypeInfo
+      ...ModelOutgoingRelations
+      ...ModelIncomingRelations
+    }
+  }
+}
