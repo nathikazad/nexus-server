@@ -26,6 +26,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'database'))
 
 from models import SessionLocal, Model, ModelType, engine
 from config import db_config
+from sqlalchemy import text
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -36,6 +37,7 @@ This MCP server provides access to your Personal Knowledge Management (PKM) data
 Use the available tools to:
 - list_people: Get all people in your knowledge base with their names and descriptions
 - add_people: Add new people to your knowledge base with name and description
+- get_person_details: Get comprehensive details for a specific person by ID, including traits, attributes, and relationships
 """
 
 
@@ -76,6 +78,7 @@ async def list_people() -> Dict[str, Any]:
             people_list = []
             for person in people_models:
                 people_list.append({
+                    "id": person.id,
                     "name": person.title,
                     "description": person.body or "No description available"
                 })
@@ -196,6 +199,76 @@ async def add_people(name: str, description: str = "") -> Dict[str, Any]:
         }
 
 
+async def get_person_details(person_id: int) -> Dict[str, Any]:
+    """
+    Get comprehensive details for a specific person by their ID.
+    
+    This function uses the PostgreSQL get_model_full function to retrieve:
+    - Basic model information (name, description, etc.)
+    - Model type information
+    - All traits assigned to the person
+    - All attributes and their values
+    - All relationships (both incoming and outgoing) with related models
+    
+    Args:
+        person_id: The ID of the person/model to retrieve details for
+    
+    Returns:
+        Dictionary with comprehensive person details including model data, traits, 
+        attributes, and relationships. Returns error information if person not found.
+    """
+    try:
+        # Test database connection first
+        with engine.connect() as conn:
+            pass  # Connection test
+        
+        db = SessionLocal()
+        try:
+            # First verify the model exists
+            model = db.query(Model).filter(Model.id == person_id).first()
+            
+            if not model:
+                return {
+                    "success": False,
+                    "error": "Person not found",
+                    "message": f"No person found with ID {person_id}",
+                    "person_id": person_id
+                }
+            
+            # Use the PostgreSQL function to get comprehensive data
+            result = db.execute(text('SELECT get_model_full(:person_id)'), {'person_id': person_id})
+            full_data = result.fetchone()[0]
+            
+            if not full_data:
+                return {
+                    "success": False,
+                    "error": "Failed to retrieve person data",
+                    "message": f"Could not retrieve data for person ID {person_id}",
+                    "person_id": person_id
+                }
+            
+            logger.info(f"Retrieved comprehensive data for person {person_id}")
+            
+            return {
+                "success": True,
+                "person_id": person_id,
+                "data": full_data,
+                "message": f"Successfully retrieved comprehensive details for person {person_id}"
+            }
+            
+        finally:
+            db.close()
+            
+    except Exception as e:
+        logger.error(f"Error getting person details for ID {person_id}: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": f"Failed to retrieve person details for ID {person_id}. Please check database connection.",
+            "person_id": person_id
+        }
+
+
 def create_http_mcp_server():
     """Create and configure the HTTP MCP server with PKM tools."""
     # Initialize the FastMCP server for HTTP
@@ -204,6 +277,7 @@ def create_http_mcp_server():
     # Register the PKM functions
     mcp.tool()(list_people)
     mcp.tool()(add_people)
+    mcp.tool()(get_person_details)
 
     return mcp
 
@@ -216,6 +290,7 @@ def create_sse_mcp_server():
     # Register the PKM functions
     mcp.tool()(list_people)
     mcp.tool()(add_people)
+    mcp.tool()(get_person_details)
 
     return mcp
 
@@ -260,7 +335,7 @@ def run_sse_server(host: str = "0.0.0.0", port: int = 8001):
         # Use FastMCP's built-in run method with SSE transport
         server.run(transport="sse", host=host, port=port)
     except KeyboardInterrupt:
-        logger.info("SSE server stopped by user")
+        logger.info("SSE server stopped by person")
     except Exception as e:
         logger.error(f"SSE server error: {e}")
         raise
@@ -325,6 +400,7 @@ Examples:
 Available Tools:
   - list_people: Get all people in your knowledge base
   - add_people: Add new people with name and description
+  - get_person_details: Get comprehensive details for a specific person by ID
         """
     )
     
@@ -370,7 +446,7 @@ Available Tools:
         else:  # cors-http mode
             run_cors_http_server(host=args.host, port=args.cors_port)
     except KeyboardInterrupt:
-        logger.info("Server stopped by user")
+        logger.info("Server stopped by person")
     except Exception as e:
         logger.error(f"Server error: {e}")
         raise
