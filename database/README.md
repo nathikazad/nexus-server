@@ -1,44 +1,57 @@
-# SQLAlchemy + Alembic + PostgreSQL Demo
+# GraphQL API with PostGraphile + SQLAlchemy + PostgreSQL
 
-This is a minimal working example demonstrating how to use SQLAlchemy with Alembic for database migrations in PostgreSQL.
+This is a GraphQL-first database API using PostGraphile to automatically generate GraphQL schema from SQLAlchemy models.
 
-## Features Demonstrated
+## Features
 
-- ✅ **Database Configuration**: Configurable for local and remote PostgreSQL
-- ✅ **Table Creation**: Initial migration to create users table
-- ✅ **Column Addition**: Migration to add age column to users table
-- ✅ **CRUD Operations**: Create, Read, Update, Delete operations
-- ✅ **Environment Configuration**: Using environment variables for database settings
+- ✅ **GraphQL API**: Automatic schema generation from database models
+- ✅ **PostGraphile**: Zero-config GraphQL server with real-time subscriptions
+- ✅ **SQLAlchemy Models**: Type-safe database models with relationships
+- ✅ **Alembic Migrations**: Database schema versioning and migrations
+- ✅ **GraphiQL Interface**: Interactive GraphQL query interface
+- ✅ **Flexible Queries**: Request exactly the data you need
 
 ## Project Structure
 
 ```
 database/
-├── __init__.py              # Package initialization
 ├── config.py               # Database configuration
-├── models.py               # SQLAlchemy models
-├── demo.py                 # Demo script
-├── alembic.ini             # Alembic configuration
-├── env_example.txt         # Environment variables example
-├── README.md               # This file
-└── alembic/
-    ├── env.py              # Alembic environment configuration
-    ├── script.py.mako      # Migration template
-    └── versions/
-        ├── 0001_initial_migration.py    # Create users table
-        └── 0002_add_age_column.py       # Add age column
+├── models/                 # SQLAlchemy models
+│   ├── __init__.py        # Package initialization
+│   └── models.py          # Database model definitions
+├── admin_functions/        # Database management scripts
+│   ├── init.py            # Database initialization
+│   ├── reset_db.py        # Database reset utilities
+│   └── load_data.py       # Sample data loading
+├── graphql/               # GraphQL API server
+│   ├── server.js          # PostGraphile server
+│   ├── package.json       # Node.js dependencies
+│   ├── gql/               # GraphQL queries
+│   │   └── models.gql     # Model queries with fragments
+│   └── README.md          # GraphQL setup guide
+├── alembic/               # Database migrations
+│   ├── env.py             # Alembic environment
+│   └── versions/          # Migration files
+└── README.md              # This file
 ```
 
 ## Setup Instructions
 
-### 1. Install Dependencies
+### 1. Install Python Dependencies
 
 ```bash
 cd /Users/nathikazad/Projects/Nexus/server
 pip install -r requirements.txt
 ```
 
-### 2. Install PostgreSQL
+### 2. Install Node.js Dependencies
+
+```bash
+cd /Users/nathikazad/Projects/Nexus/server/database/graphql
+npm install
+```
+
+### 3. Install PostgreSQL
 
 **On macOS:**
 ```bash
@@ -205,12 +218,46 @@ DB_PASSWORD=your_password
 1. Ensure database user has proper permissions
 2. Check PostgreSQL user roles and grants
 
+## Using the GraphQL API
+
+### 5. Start the GraphQL Server
+
+```bash
+cd /Users/nathikazad/Projects/Nexus/server/database/graphql
+npm start
+```
+
+The server will be available at:
+- **GraphQL endpoint**: http://localhost:5001/graphql
+- **GraphiQL interface**: http://localhost:5001/graphiql
+
+### 6. Query Your Data
+
+Use the GraphiQL interface or make HTTP requests:
+
+```bash
+# Get all models with their relationships
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"query": "{ allModels { nodes { id title modelTypeByModelTypeId { name } } } }"}' \
+  http://localhost:5001/graphql
+```
+
+### 7. Use GraphQL Fragments
+
+Check out `graphql/gql/models.gql` for reusable query fragments:
+- `ModelComplete` - All model data
+- `ModelBasic` - Basic model info
+- `ModelTraits` - Model traits
+- `ModelAttributes` - Model attributes
+- `ModelOutgoingRelations` - Outgoing relationships
+- `ModelIncomingRelations` - Incoming relationships
+
 ## Next Steps
 
-This example provides a foundation for:
-- Adding more complex models
-- Implementing relationships between tables
-- Adding indexes and constraints
-- Setting up database seeding
-- Implementing database connection pooling
-- Adding database health checks
+This GraphQL-first setup provides:
+- ✅ **Automatic API generation** from your database schema
+- ✅ **Flexible queries** - request exactly what you need
+- ✅ **Real-time subscriptions** for live data updates
+- ✅ **Type-safe queries** with automatic validation
+- ✅ **Interactive documentation** via GraphiQL
+- ✅ **Easy client integration** with any GraphQL client

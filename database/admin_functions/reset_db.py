@@ -142,7 +142,7 @@ def run_migrations():
         # Run alembic upgrade
         result = subprocess.run(
             ['alembic', 'upgrade', 'head'],
-            cwd=os.path.dirname(os.path.abspath(__file__)),
+            cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             capture_output=True,
             text=True
         )
@@ -167,8 +167,8 @@ def load_sample_data():
     
     try:
         result = subprocess.run(
-            [sys.executable, 'load_data.py'],
-            cwd=os.path.dirname(os.path.abspath(__file__)),
+            [sys.executable, 'admin_functions/load_data.py'],
+            cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             capture_output=True,
             text=True
         )
