@@ -24,7 +24,7 @@ from fastmcp import FastMCP as FastMCPSSE
 # Add database directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), 'database'))
 
-from models import SessionLocal, Model, ModelType, engine
+from models.models import SessionLocal, Model, ModelType, engine
 from config import db_config
 from sqlalchemy import text
 

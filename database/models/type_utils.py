@@ -8,7 +8,7 @@ data structures according to the defined types.
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 import logging
-from model_types import (
+from .model_types import (
     validate_model_type_structure,
     validate_model_structure,
     validate_model_full_data_structure
