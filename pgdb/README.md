@@ -1,20 +1,22 @@
-# GraphQL API with PostGraphile + SQLAlchemy + PostgreSQL
+# PostgreSQL Database with SQLAlchemy + Alembic
 
-This is a GraphQL-first database API using PostGraphile to automatically generate GraphQL schema from SQLAlchemy models.
+This is a PostgreSQL database setup with SQLAlchemy models and Alembic migrations for the PKM (Personal Knowledge Management) system.
+
+> **Note**: This is part of the Nexus PKM server. See `../README.md` for the complete system overview.
 
 ## Features
 
-- ✅ **GraphQL API**: Automatic schema generation from database models
-- ✅ **PostGraphile**: Zero-config GraphQL server with real-time subscriptions
 - ✅ **SQLAlchemy Models**: Type-safe database models with relationships
 - ✅ **Alembic Migrations**: Database schema versioning and migrations
-- ✅ **GraphiQL Interface**: Interactive GraphQL query interface
-- ✅ **Flexible Queries**: Request exactly the data you need
+- ✅ **PostgreSQL Integration**: Full PostgreSQL database support
+- ✅ **Database Management**: Admin functions for initialization and data loading
+- ✅ **Type-safe Models**: SQLAlchemy models with proper relationships
+- ✅ **Migration System**: Version-controlled database schema changes
 
 ## Project Structure
 
 ```
-database/
+pgdatabase/
 ├── config.py               # Database configuration
 ├── models/                 # SQLAlchemy models
 │   ├── __init__.py        # Package initialization
@@ -23,16 +25,11 @@ database/
 │   ├── init.py            # Database initialization
 │   ├── reset_db.py        # Database reset utilities
 │   └── load_data.py       # Sample data loading
-├── graphql/               # GraphQL API server
-│   ├── server.js          # PostGraphile server
-│   ├── package.json       # Node.js dependencies
-│   ├── gql/               # GraphQL queries
-│   │   └── models.gql     # Model queries with fragments
-│   └── README.md          # GraphQL setup guide
 ├── alembic/               # Database migrations
 │   ├── env.py             # Alembic environment
 │   └── versions/          # Migration files
 └── README.md              # This file
+
 ```
 
 ## Setup Instructions
@@ -40,18 +37,12 @@ database/
 ### 1. Install Python Dependencies
 
 ```bash
-cd /Users/nathikazad/Projects/Nexus/server
+cd pgdatabase
 pip install -r requirements.txt
 ```
 
-### 2. Install Node.js Dependencies
 
-```bash
-cd /Users/nathikazad/Projects/Nexus/server/database/graphql
-npm install
-```
-
-### 3. Install PostgreSQL
+### 2. Install PostgreSQL
 
 **On macOS:**
 ```bash
@@ -218,46 +209,10 @@ DB_PASSWORD=your_password
 1. Ensure database user has proper permissions
 2. Check PostgreSQL user roles and grants
 
-## Using the GraphQL API
-
-### 5. Start the GraphQL Server
-
-```bash
-cd /Users/nathikazad/Projects/Nexus/server/database/graphql
-npm start
-```
-
-The server will be available at:
-- **GraphQL endpoint**: http://localhost:5001/graphql
-- **GraphiQL interface**: http://localhost:5001/graphiql
-
-### 6. Query Your Data
-
-Use the GraphiQL interface or make HTTP requests:
-
-```bash
-# Get all models with their relationships
-curl -X POST -H "Content-Type: application/json" \
-  -d '{"query": "{ allModels { nodes { id title modelTypeByModelTypeId { name } } } }"}' \
-  http://localhost:5001/graphql
-```
-
-### 7. Use GraphQL Fragments
-
-Check out `graphql/gql/models.gql` for reusable query fragments:
-- `ModelComplete` - All model data
-- `ModelBasic` - Basic model info
-- `ModelTraits` - Model traits
-- `ModelAttributes` - Model attributes
-- `ModelOutgoingRelations` - Outgoing relationships
-- `ModelIncomingRelations` - Incoming relationships
-
 ## Next Steps
 
-This GraphQL-first setup provides:
-- ✅ **Automatic API generation** from your database schema
-- ✅ **Flexible queries** - request exactly what you need
-- ✅ **Real-time subscriptions** for live data updates
-- ✅ **Type-safe queries** with automatic validation
-- ✅ **Interactive documentation** via GraphiQL
-- ✅ **Easy client integration** with any GraphQL client
+This database setup provides:
+- ✅ **SQLAlchemy Models** - Type-safe database models with relationships
+- ✅ **Alembic Migrations** - Database schema versioning and migrations
+- ✅ **Database Management** - Admin functions for initialization and data loading
+- ✅ **PostgreSQL Integration** - Full PostgreSQL database support
