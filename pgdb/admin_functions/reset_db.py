@@ -1,20 +1,4 @@
 #!/usr/bin/env python3
-"""
-Complete Database Reset Script
-
-This script provides multiple ways to reset the database:
-1. Recreate database (empty) - default
-2. Recreate database and run migrations
-3. Recreate database, run migrations, and load sample data
-
-All options completely drop and recreate the entire database.
-
-Usage:
-    python reset_db.py                    # Recreate database (empty)
-    python reset_db.py --with-migrations  # Recreate database and run migrations
-    python reset_db.py --with-data        # Recreate database, run migrations, and load data
-    python reset_db.py --help             # Show help
-"""
 
 import os
 import sys
@@ -272,7 +256,7 @@ def verify_extensions():
     cur.close()
     conn.close()
 
-def reset(hard=False, with_data=False):
+def reset(hard=False, with_migrations=True, with_data=True):
     """Perform complete database reset"""
     print_banner()
     
@@ -284,20 +268,20 @@ def reset(hard=False, with_data=False):
         else:
             drop_all_tables()
             drop_alembic_version()
-    
+
         verify_extensions()
-        # Step 2: Run migrations
-        if not run_migrations():
-            return False
-        
-        # Step 3: Load sample data if requested
-        if with_data:
-            if not load_sample_data():
+
+        if with_migrations:
+            if not run_migrations():
                 return False
-        
+            
+            # Step 3: Load sample data if requested
+            if with_data:
+                if not load_sample_data():
+                    return False
+            
         # Step 4: Verify everything
         verify_database()
-        
         print("\n🎉 Database reset completed successfully!")
         return True
         
@@ -322,15 +306,15 @@ Examples:
     )
     
     parser.add_argument(
-        '--with-migrations', 
+        '--only-migrations', 
         action='store_true',
         help='soft reset with migrations'
     )
     
     parser.add_argument(
-        '--with-data', 
+        '--no-data-or-migrations', 
         action='store_true',
-        help='soft reset with migrations and data'
+        help='soft reset without migrations or data'
     )
     
     
@@ -354,15 +338,14 @@ Examples:
             verify_database()
         return
     
-    if args.with_data:
-        success = reset(hard=False, with_data=True)
-    elif args.with_migrations:
-        success = reset(hard=False, with_data=False)
+    if args.no_data_or_migrations:
+        success = reset(hard=False, with_migrations=False, with_data=False)
+    elif args.only_migrations:
+        success = reset(hard=False, with_migrations=True, with_data=False)
     elif args.hard_reset:
-        success = reset(hard=True, with_data=True)
+        success = reset(hard=True, with_migrations=True, with_data=True)
     else:
-        # Default: recreate database (empty)
-        success = reset(hard=False, with_data=True)
+        success = reset(hard=False, with_migrations=True, with_data=True)
     
     sys.exit(0 if success else 1)
 
