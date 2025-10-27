@@ -265,6 +265,50 @@ def complete_reset(with_data=False):
         return False
 
 
+def soft_reset_tables():
+    """Drop only application tables (keep extensions)"""
+    print_banner()
+    
+    try:
+        # Step 1: Drop only application tables
+        drop_all_tables()
+        drop_alembic_version()
+        
+        # Step 2: Verify extensions are still there
+        print("\n🔍 Verifying extensions are intact...")
+        conn = psycopg2.connect(db_config.database_url)
+        cur = conn.cursor()
+        
+        cur.execute("""
+            SELECT extname 
+            FROM pg_extension 
+            ORDER BY extname;
+        """)
+        
+        extensions = [row[0] for row in cur.fetchall()]
+        expected_extensions = ['postgis', 'vector', 'pg_trgm', 'timescaledb']
+        
+        print(f"Found {len(extensions)} extensions:")
+        for ext in extensions:
+            status = "✅" if ext in expected_extensions else "ℹ️"
+            print(f"  {status} {ext}")
+        
+        missing_extensions = set(expected_extensions) - set(extensions)
+        if missing_extensions:
+            print(f"⚠️  Missing extensions: {', '.join(missing_extensions)}")
+        else:
+            print("✅ All extensions are intact!")
+        
+        cur.close()
+        conn.close()
+        
+        print("\n🎉 Soft reset completed successfully!")
+        return True
+        
+    except Exception as e:
+        print(f"\n❌ Soft reset failed: {e}")
+        return False
+
 def drop_tables_only():
     """Drop entire database (no migrations, no data)"""
     print_banner()
@@ -332,6 +376,7 @@ def main():
         epilog="""
 Examples:
   python reset_db.py                    # Recreate database (empty)
+  python reset_db.py --soft-reset       # Drop tables only (keep extensions)
   python reset_db.py --with-migrations  # Recreate database and run migrations
   python reset_db.py --with-data        # Recreate database, run migrations, and load data
   python reset_db.py --verify           # Just verify database structure
@@ -352,6 +397,12 @@ Examples:
     
     
     parser.add_argument(
+        '--soft-reset',
+        action='store_true',
+        help='Drop tables only (keep extensions)'
+    )
+    
+    parser.add_argument(
         '--verify',
         action='store_true',
         help='Just verify database structure'
@@ -369,6 +420,8 @@ Examples:
         success = complete_reset(with_data=True)
     elif args.with_migrations:
         success = tables_with_migrations_reset()
+    elif args.soft_reset:
+        success = drop_tables_only()
     else:
         # Default: recreate database (empty)
         success = drop_tables_only()

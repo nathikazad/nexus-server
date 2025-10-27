@@ -1,0 +1,27 @@
+services:
+  postgres:
+    volumes:
+      # Override with development-specific volume mounts
+      - postgres_dev_data:/var/lib/postgresql/data
+
+  graphql:
+    volumes:
+      # Mount source code for hot reload
+      - ../graphql:/app
+      - /app/node_modules  # Anonymous volume to prevent overwriting node_modules
+    environment:
+      NODE_ENV: development
+    command: ["npm", "run", "dev"]  # Assuming you have a dev script
+
+  mcp:
+    volumes:
+      # Mount source code for hot reload
+      - ../mcp:/app
+    environment:
+      PYTHONPATH: /app
+      PYTHONUNBUFFERED: 1
+    command: ["python", "pkm_server.py", "--host", "0.0.0.0"]
+
+volumes:
+  postgres_dev_data:
+    driver: local

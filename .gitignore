@@ -213,3 +213,7 @@ docker-compose.override.yml
 # Local development
 local/
 dev/
+
+
+.env.dev
+.env.prod

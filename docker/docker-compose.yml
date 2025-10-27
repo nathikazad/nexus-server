@@ -1,0 +1,80 @@
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
+    container_name: nexus-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-nexus_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+    ports:
+      - "${DB_EXTERNAL_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-nexus_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexus-network
+
+  graphql:
+    build:
+      context: .
+      dockerfile: Dockerfile.graphql
+    container_name: nexus-graphql
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-password}@postgres:5432/${DB_NAME:-nexus_db}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-nexus_db}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      PORT: ${GRAPHQL_PORT:-5001}
+      GRAPHQL_SECRET: ${GRAPHQL_SECRET}
+    ports:
+      - "${GRAPHQL_PORT:-5001}:5001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:5001/graphiql || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - nexus-network
+
+  mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    container_name: nexus-mcp
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-nexus_db}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      GRAPHQL_URL: http://graphql:5001
+      MCP_SECRET: ${MCP_SECRET}
+      CORS_PORT: ${MCP_CORS_PORT:-8000}
+      SSE_PORT: ${MCP_SSE_PORT:-8001}
+    ports:
+      - "${MCP_CORS_PORT:-8000}:8000"
+      - "${MCP_SSE_PORT:-8001}:8001"
+    depends_on:
+      graphql:
+        condition: service_healthy
+    networks:
+      - nexus-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  nexus-network:
+    driver: bridge

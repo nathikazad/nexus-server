@@ -1,7 +1,7 @@
 # MCP Server Dependencies
 fastmcp==2.12.5
 mcp==1.16.0
-uvicorn==0.24.0
-starlette==0.27.0
+uvicorn>=0.31.1
+starlette>=0.27.0
 requests==2.31.0
-python-dotenv==1.0.0
+python-dotenv>=1.1.0

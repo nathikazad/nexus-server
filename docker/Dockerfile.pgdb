@@ -1,0 +1,30 @@
+# Python PostgreSQL Database Server
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY pgdb/requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY pgdb/ .
+
+# Create non-root user
+RUN useradd -m -u 1001 appuser && chown -R appuser:appuser /app
+USER appuser
+
+# Expose port (if needed for any web interface)
+EXPOSE 8080
+
+# Default command (can be overridden in docker-compose)
+CMD ["python", "-c", "print('PostgreSQL Database Server ready')"]
