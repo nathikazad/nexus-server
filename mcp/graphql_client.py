@@ -14,8 +14,13 @@ logger = logging.getLogger(__name__)
 class GraphQLClient:
     """Simple client for GraphQL operations."""
     
-    def __init__(self, graphql_url: str = "http://localhost:5001/graphql"):
-        self.graphql_url = graphql_url
+    def __init__(self, graphql_url: str = None):
+        if graphql_url is None:
+            # Use environment variable or default to localhost for local development
+            graphql_host = os.getenv('GRAPHQL_URL', 'http://localhost:5001')
+            self.graphql_url = f"{graphql_host}/graphql"
+        else:
+            self.graphql_url = graphql_url
         self.session = requests.Session()
         self.session.headers.update({
             'Content-Type': 'application/json',
@@ -27,7 +32,7 @@ class GraphQLClient:
         try:
             # Load the .gql file
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            gql_file_path = os.path.join(current_dir, '..', 'graphql', 'gql', 'models.gql')
+            gql_file_path = os.path.join(current_dir, 'graphql', 'gql', 'models.gql')
             
             with open(gql_file_path, 'r') as f:
                 content = f.read()

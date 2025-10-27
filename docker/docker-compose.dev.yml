@@ -17,6 +17,8 @@ services:
     volumes:
       # Mount source code for hot reload
       - ../mcp:/app
+      # Mount GraphQL directory for access to .gql files
+      - ../graphql:/app/graphql
     environment:
       PYTHONPATH: /app
       PYTHONUNBUFFERED: 1

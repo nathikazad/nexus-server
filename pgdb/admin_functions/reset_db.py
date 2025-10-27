@@ -99,7 +99,7 @@ def drop_alembic_version():
         cur.close()
         conn.close()
 
-def recreate_database():
+def empty_database():
     """Completely recreate the database"""
     print("\n🗑️  Recreating entire database...")
     
@@ -237,14 +237,55 @@ def verify_database():
         cur.close()
         conn.close()
 
-def complete_reset(with_data=False):
+def verify_extensions():
+    print("\n🔍 Verifying extensions are intact...")
+    conn = psycopg2.connect(db_config.database_url)
+    cur = conn.cursor()
+
+    cur.execute("""
+        CREATE EXTENSION IF NOT EXISTS postgis;
+        CREATE EXTENSION IF NOT EXISTS vector;
+        CREATE EXTENSION IF NOT EXISTS pg_trgm;
+        CREATE EXTENSION IF NOT EXISTS timescaledb;
+    """)
+    
+    cur.execute("""
+        SELECT extname 
+        FROM pg_extension 
+        ORDER BY extname;
+    """)
+    
+    extensions = [row[0] for row in cur.fetchall()]
+    expected_extensions = ['postgis', 'vector', 'pg_trgm', 'timescaledb']
+    
+    print(f"Found {len(extensions)} extensions:")
+    for ext in extensions:
+        status = "✅" if ext in expected_extensions else "ℹ️"
+        print(f"  {status} {ext}")
+    
+    missing_extensions = set(expected_extensions) - set(extensions)
+    if missing_extensions:
+        print(f"⚠️  Missing extensions: {', '.join(missing_extensions)}")
+    else:
+        print("✅ All extensions are intact!")
+    
+    cur.close()
+    conn.close()
+
+def reset(hard=False, with_data=False):
     """Perform complete database reset"""
     print_banner()
     
     try:
         # Step 1: Recreate entire database
-        recreate_database()
-        
+        if hard:
+            empty_database()
+            create_extensions()
+        else:
+            drop_all_tables()
+            drop_alembic_version()
+    
+        verify_extensions()
         # Step 2: Run migrations
         if not run_migrations():
             return False
@@ -265,109 +306,6 @@ def complete_reset(with_data=False):
         return False
 
 
-def soft_reset_tables():
-    """Drop only application tables (keep extensions)"""
-    print_banner()
-    
-    try:
-        # Step 1: Drop only application tables
-        drop_all_tables()
-        drop_alembic_version()
-        
-        # Step 2: Verify extensions are still there
-        print("\n🔍 Verifying extensions are intact...")
-        conn = psycopg2.connect(db_config.database_url)
-        cur = conn.cursor()
-        
-        cur.execute("""
-            SELECT extname 
-            FROM pg_extension 
-            ORDER BY extname;
-        """)
-        
-        extensions = [row[0] for row in cur.fetchall()]
-        expected_extensions = ['postgis', 'vector', 'pg_trgm', 'timescaledb']
-        
-        print(f"Found {len(extensions)} extensions:")
-        for ext in extensions:
-            status = "✅" if ext in expected_extensions else "ℹ️"
-            print(f"  {status} {ext}")
-        
-        missing_extensions = set(expected_extensions) - set(extensions)
-        if missing_extensions:
-            print(f"⚠️  Missing extensions: {', '.join(missing_extensions)}")
-        else:
-            print("✅ All extensions are intact!")
-        
-        cur.close()
-        conn.close()
-        
-        print("\n🎉 Soft reset completed successfully!")
-        return True
-        
-    except Exception as e:
-        print(f"\n❌ Soft reset failed: {e}")
-        return False
-
-def drop_tables_only():
-    """Drop entire database (no migrations, no data)"""
-    print_banner()
-    
-    try:
-        # Step 1: Recreate entire database
-        recreate_database()
-        
-        # Step 2: Verify database is empty
-        print("\n🔍 Verifying database is empty...")
-        conn = psycopg2.connect(db_config.database_url)
-        cur = conn.cursor()
-        
-        cur.execute("""
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public' 
-            AND table_type = 'BASE TABLE'
-            ORDER BY table_name;
-        """)
-        
-        remaining_tables = [row[0] for row in cur.fetchall()]
-        if remaining_tables:
-            print(f"⚠️  Remaining tables: {', '.join(remaining_tables)}")
-        else:
-            print("✅ Database is completely empty!")
-        
-        cur.close()
-        conn.close()
-        
-        print("\n🎉 Database recreated successfully!")
-        return True
-        
-    except Exception as e:
-        print(f"\n❌ Database recreation failed: {e}")
-        return False
-
-def tables_with_migrations_reset():
-    """Reset database and run migrations"""
-    print_banner()
-    
-    try:
-        # Step 1: Recreate entire database
-        recreate_database()
-        
-        # Step 2: Run migrations
-        if not run_migrations():
-            return False
-        
-        # Step 3: Verify everything
-        verify_database()
-        
-        print("\n🎉 Database reset with migrations completed successfully!")
-        return True
-        
-    except Exception as e:
-        print(f"\n❌ Database reset with migrations failed: {e}")
-        return False
-
 def main():
     """Main function with argument parsing"""
     parser = argparse.ArgumentParser(
@@ -375,10 +313,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python reset_db.py                    # Recreate database (empty)
-  python reset_db.py --soft-reset       # Drop tables only (keep extensions)
-  python reset_db.py --with-migrations  # Recreate database and run migrations
-  python reset_db.py --with-data        # Recreate database, run migrations, and load data
+  python reset_db.py                    # Drop only the application tables (keep extensions)
+  python reset_db.py --hard-reset       # Drop all tables and extensions
+  python reset_db.py --with-migrations  # soft reset with migrations
+  python reset_db.py --with-data        # soft reset with migrations and data
   python reset_db.py --verify           # Just verify database structure
         """
     )
@@ -386,20 +324,20 @@ Examples:
     parser.add_argument(
         '--with-migrations', 
         action='store_true',
-        help='Recreate database and run migrations'
+        help='soft reset with migrations'
     )
     
     parser.add_argument(
         '--with-data', 
         action='store_true',
-        help='Recreate database, run migrations, and load sample data'
+        help='soft reset with migrations and data'
     )
     
     
     parser.add_argument(
-        '--soft-reset',
+        '--hard-reset',
         action='store_true',
-        help='Drop tables only (keep extensions)'
+        help='hard reset - drop all tables and extensions'
     )
     
     parser.add_argument(
@@ -417,14 +355,14 @@ Examples:
         return
     
     if args.with_data:
-        success = complete_reset(with_data=True)
+        success = reset(hard=False, with_data=True)
     elif args.with_migrations:
-        success = tables_with_migrations_reset()
-    elif args.soft_reset:
-        success = drop_tables_only()
+        success = reset(hard=False, with_data=False)
+    elif args.hard_reset:
+        success = reset(hard=True, with_data=True)
     else:
         # Default: recreate database (empty)
-        success = drop_tables_only()
+        success = reset(hard=False, with_data=True)
     
     sys.exit(0 if success else 1)
 
