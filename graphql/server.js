@@ -16,6 +16,9 @@ const dbUrl = process.env.DATABASE_URL ||
 app.use(postgraphile(dbUrl, 'public', {
   graphiql: true,
   enhanceGraphiql: true,
+  watchPg: true,           // 👈 watches for schema changes
+  retryOnInitFail: true,   // 👈 keeps retrying if DB is temporarily down
+  dynamicJson: true,       // 👈 helps with JSON columns
 }));
 
 const PORT = process.env.PORT || 5001;

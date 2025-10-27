@@ -11,25 +11,26 @@ ENV_FILE=""
 case "${1:-dev}" in
     "dev")
         echo "🚀 Starting Nexus Development Environment..."
-        ENV_FILE="../env.dev.example"
+        ENV_FILE="./env.dev.example"
         if [ ! -f "../.env.dev" ]; then
             echo "⚠️  .env.dev not found, copying from example..."
-            cp "../env.dev.example" "../.env.dev"
+            cp "./env.dev.example" "../.env.dev"
             echo "📝 Please edit servers/.env.dev with your actual secrets and passwords"
         fi
         ENV_FILE="../.env.dev"
-        docker-compose -f docker-compose.yml -f docker-compose.dev.yml --env-file "$ENV_FILE" up --build
+        docker-compose -p nexus-servers -f docker-compose.yml -f docker-compose.dev.yml --env-file "$ENV_FILE" up --build
         ;;
     "prod")
         echo "🏭 Starting Nexus Production Environment..."
-        ENV_FILE="../env.prod.example"
+        ENV_FILE="./env.prod.example"
         if [ ! -f "../.env.prod" ]; then
             echo "⚠️  .env.prod not found, copying from example..."
-            cp "../env.prod.example" "../.env.prod"
+            cp "./env.prod.example" "../.env.prod"
             echo "📝 Please edit servers/.env.prod with your actual secrets, passwords, and SSD path"
         fi
         ENV_FILE="../.env.prod"
-        docker-compose -f docker-compose.yml -f docker-compose.prod.yml --env-file "$ENV_FILE" up -d --build
+        docker-compose -p nexus-servers -f docker-compose.yml -f docker-compose.prod.yml --env-file "$ENV_FILE" up -d --build
+
         ;;
     "stop")
         echo "🛑 Stopping Nexus Services..."
