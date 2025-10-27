@@ -217,3 +217,5 @@ dev/
 
 .env.dev
 .env.prod
+
+pgdb/data/

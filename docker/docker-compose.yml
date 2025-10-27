@@ -1,8 +1,8 @@
 services:
   postgres:
     build:
-      context: .
-      dockerfile: Dockerfile.postgres
+      context: ..
+      dockerfile: docker/Dockerfile.postgres
     container_name: nexus-postgres
     environment:
       POSTGRES_DB: ${DB_NAME:-nexus_db}
@@ -22,8 +22,8 @@ services:
 
   graphql:
     build:
-      context: .
-      dockerfile: Dockerfile.graphql
+      context: ..
+      dockerfile: docker/Dockerfile.graphql
     container_name: nexus-graphql
     environment:
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-password}@postgres:5432/${DB_NAME:-nexus_db}
@@ -49,8 +49,8 @@ services:
 
   mcp:
     build:
-      context: .
-      dockerfile: Dockerfile.mcp
+      context: ..
+      dockerfile: docker/Dockerfile.mcp
     container_name: nexus-mcp
     environment:
       DB_HOST: postgres

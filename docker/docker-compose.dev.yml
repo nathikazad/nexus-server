@@ -2,7 +2,7 @@ services:
   postgres:
     volumes:
       # Override with development-specific volume mounts
-      - postgres_dev_data:/var/lib/postgresql/data
+      - ${DATA_PATH:-./data}/postgres:/var/lib/postgresql/data
 
   graphql:
     volumes:
