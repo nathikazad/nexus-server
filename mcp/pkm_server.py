@@ -9,6 +9,7 @@ import logging
 import sys
 import os
 from typing import Dict, Any
+import time  # ✅ added
 
 import uvicorn
 from starlette.middleware.cors import CORSMiddleware
@@ -103,9 +104,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python pkm_server_new.py                    # Run both servers (default)
-  python pkm_server_new.py --mode cors-http   # Run only CORS-HTTP server
-  python pkm_server_new.py --mode sse         # Run only SSE server
+  python pkm_server.py                    # Run both servers (default)
+  python pkm_server.py --mode cors-http   # Run only CORS-HTTP server
+  python pkm_server.py --mode sse         # Run only SSE server
+  python pkm_server.py --reload           # Watch for file changes and auto-restart
         """
     )
     
@@ -135,13 +137,41 @@ Examples:
         default=8001,
         help="Port for SSE server (default: 8001)"
     )
+
+    # ✅ NEW: reload argument
+    parser.add_argument(
+        "--reload",
+        action="store_true",
+        help="Enable auto-reload when Python files change (dev only)"
+    )
     
     args = parser.parse_args()
+
+    # ✅ NEW: setup file watcher if reload is enabled
+    if args.reload:
+        try:
+            from watchdog.observers import Observer
+            from watchdog.events import PatternMatchingEventHandler
+        except ImportError:
+            logger.error("❌ 'watchdog' not installed. Run `pip install watchdog`.")
+            sys.exit(1)
+
+        class ReloadHandler(PatternMatchingEventHandler):
+            def __init__(self):
+                super().__init__(patterns=["*.py"], ignore_directories=True)
+            def on_modified(self, event):
+                logger.info(f"🔁 Change detected in {event.src_path}. Restarting server...")
+                os.execv(sys.executable, [sys.executable] + sys.argv)
+
+        observer = Observer()
+        handler = ReloadHandler()
+        observer.schedule(handler, ".", recursive=True)
+        observer.start()
+        logger.info("👀 Watching for Python file changes (reload mode enabled)...")
     
     try:
         if args.mode == "both":
             import threading
-            import time
             
             cors_thread = threading.Thread(
                 target=run_cors_http_server, 
@@ -175,6 +205,10 @@ Examples:
     except Exception as e:
         logger.error(f"Server error: {e}")
         raise
+    finally:
+        if args.reload:
+            observer.stop()
+            observer.join()
 
 
 if __name__ == "__main__":

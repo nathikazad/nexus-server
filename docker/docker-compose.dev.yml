@@ -22,7 +22,7 @@ services:
     environment:
       PYTHONPATH: /app
       PYTHONUNBUFFERED: 1
-    command: ["python", "pkm_server.py", "--host", "0.0.0.0"]
+    command: ["python", "pkm_server.py", "--host", "0.0.0.0", "--reload"]
 
 volumes:
   postgres_dev_data:
